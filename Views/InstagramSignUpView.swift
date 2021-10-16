@@ -21,6 +21,9 @@ struct InstagramSignUpView: View {
     @State private var showingImagePicker =  false
     @State private var imageData: Data = Data()
     @State private var sourceType: UIImagePickerController.SourceType = .photoLibrary
+    @State private var error: String = ""
+    @State private var showingAlert = false
+    @State private var alertTitle: String = "Oh no 😭 "
     
     func loadImage() {
         guard let inputImage = pickedImage else {  return }
@@ -28,6 +31,44 @@ struct InstagramSignUpView: View {
         profileImage = inputImage
     }
     
+    func errorCheck() -> String? {
+        if email.trimmingCharacters(in: .whitespaces).isEmpty || password.trimmingCharacters(in: .whitespaces).isEmpty || userName.trimmingCharacters(in: .whitespaces).isEmpty || imageData.isEmpty {
+            
+            return "Por favor complete todos los campos y seleccion una imagen"
+        }
+        
+        return nil
+    }
+    
+    /**
+     Clear Fields
+     */
+    func clearFields() {
+        self.email = ""
+        self.userName = ""
+        self.password = ""
+        self.imageData = Data()
+        self.profileImage = Image(systemName: "person.circle.fill")
+    }
+    
+    func signUp() {
+        if let error = errorCheck() {
+            self.error = error
+            self.showingAlert = true
+            return
+        }
+        
+        AuthService.signUp(username: userName, email: email, password: password, imageData: imageData, onSuccess: {
+            (user) in
+            self.clearFields()
+        }) {
+            (errorMessage) in
+            print("Error \(errorMessage)")
+            self.error = errorMessage
+            self.showingAlert = true
+            return
+        }
+    }
     
     var body: some View {
         ScrollView {
@@ -59,7 +100,7 @@ struct InstagramSignUpView: View {
                         } else {
                             Image(systemName: "person.circle.fill")
                                 .resizable()
-                                .clipShape(/*@START_MENU_TOKEN@*/Circle()/*@END_MENU_TOKEN@*/)
+                                .clipShape(Circle())
                                 .frame(width: 100, height: 100)
                                 .padding(.top, 20)
                                 .foregroundColor(.white)
@@ -71,15 +112,18 @@ struct InstagramSignUpView: View {
                 }
                 
                 Group {
+                    FormField(value: $userName, icon: "person.fill", placeHolder: "Usuario")
                     FormField(value: $email, icon: "envelope.fill", placeHolder: "Correo")
                     FormField(value: $password, icon: "lock.fill", placeHolder: "Contrasena", isSecure: true)
-                    FormField(value: $passConfirm, icon: "lock.fill", placeHolder: "Confirmar Contrasena", isSecure: true)
                 }
                 
-                Button(action: {}) {
+                Button(action: signUp) {
                     Text("Inscribirse")
                         .font(.title)
                         .modifier(ButtonModifiers())
+                }
+                .alert(isPresented: $showingAlert) {
+                    Alert(title: Text(alertTitle), message: Text(error), dismissButton: .default(Text("Ok")))
                 }
             }
             .padding(.top, 20)

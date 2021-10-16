@@ -8,9 +8,25 @@
 import SwiftUI
 
 struct ContentView: View {
+    @EnvironmentObject var session: SessionStore
+    
     var body: some View {
-       InstagramSignInView()
+        Group{
+            if (session.session != nil) {
+                InstagramHomeView()
+            } else {
+                InstagramSignInView()
+            }
+        }.onAppear(perform: listen)
     }
+    
+    
+    // Method or Functions
+    func listen() {
+        session.listen()
+    }
+    
+    
 }
 
 struct ContentView_Previews: PreviewProvider {

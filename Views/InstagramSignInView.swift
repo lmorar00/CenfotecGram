@@ -11,6 +11,42 @@ struct InstagramSignInView: View {
     //State variables
     @State private var email: String = ""
     @State private var password: String = ""
+    @State private var error: String = ""
+    @State private var showingAlert = false
+    @State private var alertTitle: String = "Oh no 😭"
+    
+    func errorCheck() -> String? {
+        if email.trimmingCharacters(in: .whitespaces).isEmpty || password.trimmingCharacters(in: .whitespaces).isEmpty {
+            
+            return "Por favor complete todos los campos"
+        }
+        
+        return nil
+    }
+    
+    func clearFields() {
+        self.email = ""
+        self.password = ""
+    }
+    
+    func signIn() {
+        if let error = errorCheck() {
+            self.error = error
+            self.showingAlert = true
+            return
+        }
+        
+        AuthService.signIn(email: email, password: password, onSuccess: {
+            (user) in
+            self.clearFields()
+        }) {
+            (errorMessage) in
+            print("Error \(errorMessage)")
+            self.error = errorMessage
+            self.showingAlert = true
+            return
+        }
+    }
     
     var body: some View {
         NavigationView {
@@ -30,10 +66,13 @@ struct InstagramSignInView: View {
                 FormField(value: $email, icon: "envelope.fill", placeHolder: "Correo")
                 FormField(value: $password, icon: "lock.fill", placeHolder: "Contrasena", isSecure: true)
                 
-                Button(action: {}) {
+                Button(action: signIn) {
                     Text("Inicio Sesión")
                         .font(.title)
                         .modifier(ButtonModifiers())
+                }
+                .alert(isPresented: $showingAlert) {
+                    Alert(title: Text(alertTitle), message: Text(error), dismissButton: .default(Text("Ok")))
                 }
                 
                 HStack{
